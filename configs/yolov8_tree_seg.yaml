@@ -1,0 +1,10 @@
+# YOLOv8 Instance Segmentation Dataset Configuration
+# Solafune Tree Canopy Segmentation Challenge
+
+path: ./data/dataset
+train: images/train
+val: images/val
+
+# Class names
+names:
+  0: tree_canopy
