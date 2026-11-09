@@ -1,101 +1,85 @@
-# Tree Canopy Instance Segmentation in High-Resolution Aerial Imagery
+# Tree Canopy Instance Segmentation
 
-An end-to-end deep learning framework for precise tree crown instance segmentation from heterogeneous remote sensing aerial imagery (10–80 cm Ground Sampling Distance). Developed for the **Solafune Tree Canopy Segmentation Challenge**, this project benchmarks **YOLOv8-seg** against **Detectron2 Mask R-CNN** and introduces a **resolution-aware data augmentation strategy** that elevated our competition score from **0.33 to 0.42 mAP@0.75**, ranking **#14 out of 143+ global teams**.
+An instance segmentation framework for aerial imagery developed for the Solafune Tree Canopy Segmentation Challenge. The project benchmarks YOLOv8-seg against Detectron2 Mask R-CNN and uses a resolution-aware augmentation strategy to handle variable Ground Sampling Distances (10 to 80 cm).
 
----
+## Overview
 
-## 1. Context, Authorship & Attribution
+- Competition: Solafune Tree Canopy Segmentation Challenge
+- Course Context: Deep Learning (DL), Semester 5 (Fall 2025), Plaksha University
+- Team: Team SupTumber (Arnav Mehta, Ananya Singla, Mohil Ahuja, Prasham Sheth, Vaibhav Dabas)
+- Original Teammate Repository: [arnavmehta7/TreeCanopySegmentor](https://github.com/arnavmehta7/TreeCanopySegmentor)
+- Prasham's Contributions: YOLOv8 instance segmentation pipeline, Albumentations data augmentation, resolution-aware transform design, and cross-resolution error analysis.
+- Presentation Video: [YouTube](https://www.youtube.com/watch?v=0vSGzhuIN-w)
 
-- **Competition:** [Solafune Tree Canopy Segmentation Challenge](https://solafune.com/competitions/26ff758c-7422-4cd1-bfe0-daecfc40db70)
-- **Academic Context:** Course Project for **Deep Learning (DL)**, Semester 5 (Fall 2025), Plaksha University.
-- **Original Teammate Repository:** [`arnavmehta7/TreeCanopySegmentor`](https://github.com/arnavmehta7/TreeCanopySegmentor)
-- **Team Name:** Team SupTumber
-- **Team Members:** Arnav Mehta, Ananya Singla, Mohil Ahuja, Prasham Sheth, Vaibhav Dabas.
-- **Prasham's Core Contributions:**
-  - Designed and executed the YOLO instance segmentation training pipeline (`Main.ipynb` / YOLOv8-seg).
-  - Implemented the resolution-aware augmentation pipeline in Albumentations.
-  - Performed cross-resolution error analysis to identify crown degradation at GSD $> 30\text{ cm}$.
-- **Project Timeline:**
-  - *Competition & Coursework Execution:* November – December 2025 (Semester 5).
-  - *Modular Reconstruction & Library Packaging:* November 2026.
+## Methodology and Results
 
----
+The competition evaluated models on weighted mean Average Precision at IoU 0.75 (mAP@0.75), weighting lower-resolution and complex landscape scenes more heavily.
 
-## 2. Key Engineering & Methodological Innovations
+### Resolution-Aware Augmentation
 
-### Resolution-Aware Data Augmentation
-Remote sensing imagery spans widely divergent ground sampling distances (GSD):
-- **High-Resolution (10–20 cm/px):** Individual tree crowns exhibit rich sub-canopy texture. Zoom-out and coarse cutout augmentations effectively simulate higher flight altitudes and wider forest contexts without losing crown boundary cues.
-- **Low/Mid-Resolution (30–50 cm/px):** Zoom-out causes crowns to collapse into blurry single-pixel blobs. Our pipeline dynamically skips zoom-out transforms for low-resolution tiles, applying edge-preserving sharpening instead.
+- High-Resolution (10-20 cm): Applied full augmentation suite, including zoom-out context simulation to simulate higher flight altitudes.
+- Low-Resolution (30-50 cm): Excluded zoom-out transforms to avoid blurring fine crown boundaries; applied edge-preserving sharpening.
 
-### Model Benchmarking & Results
-Across 100+ training runs on limited labeled aerial data (~150 high-resolution tiles):
+### Benchmark Results
 
-| Architecture | Backbone | Resolution Handling | mAP @ IoU 0.75 | Convergence | Notes |
-|---|---|---|---|---|---|
-| Mask R-CNN | ResNet-50-FPN | Standard Resize | 0.33 | Slow (>80 epochs) | Struggled with dense adjacent crowns |
-| Detectron2 | ResNeXt-101 | Multi-Scale | 0.36 | Moderate | High memory footprint, false merges |
-| **YOLOv8m-seg** | CSPDarknet | **Resolution-Aware Aug** | **0.42** | **Fast (40 epochs)** | **Top 10% competition placement (#14/143)** |
+| Model | Backbone | Resolution Strategy | mAP@0.75 | Notes |
+|---|---|---|---|---|
+| Mask R-CNN | ResNet-50-FPN | Standard Resize | 0.33 | Baseline |
+| Detectron2 | ResNeXt-101 | Multi-Scale | 0.36 | Moderate accuracy, slower convergence |
+| YOLOv8m-seg | CSPDarknet | Resolution-Aware | 0.42 | Top 10% placement (#14 of 143 teams) |
 
----
+### Limitations
 
-## 3. Repository Architecture
+End-to-end retraining from scratch requires the original Solafune competition tiles (~150 high-resolution aerial images) and a CUDA-capable GPU. The modular code, configurations, metric functions, and unit tests run independently.
+
+## Project Structure
 
 ```text
 tree-canopy-instance-segmentation/
-├── configs/
-│   ├── yolov8_tree_seg.yaml          # YOLOv8 segmentation dataset configuration
-│   └── detectron2_mask_rcnn.yaml     # Detectron2 baseline config
-├── src/
-│   ├── __init__.py
-│   ├── dataset.py                    # COCO JSON to YOLO polygon converter
-│   ├── augmentations.py              # Resolution-specific Albumentations pipeline
-│   ├── metrics.py                    # Weighted mAP@0.75 competition evaluation
-│   └── download_data.py              # Automated streaming dataset fetcher
-├── notebooks/
-│   ├── 01_eda_and_data_analysis.ipynb
-│   ├── 02_resolution_aware_augmentation.ipynb
-│   ├── 03_yolov8_segmentation_training.ipynb
-│   └── 04_detectron2_baseline.ipynb
-├── scripts/
-│   └── train_yolo.py                 # Standalone training script
-├── requirements.txt                  # Python dependencies
-├── LICENSE                           # MIT License
-└── README.md
+|-- configs/
+|   `-- yolov8_tree_seg.yaml
+|-- notebooks/
+|   |-- 01_eda_and_data_analysis.ipynb
+|   |-- 02_resolution_aware_augmentation.ipynb
+|   |-- 03_yolov8_segmentation_training.ipynb
+|   `-- 04_detectron2_baseline.ipynb
+|-- scripts/
+|   `-- train_yolo.py
+|-- src/
+|   |-- __init__.py
+|   |-- augmentations.py
+|   |-- dataset.py
+|   |-- download_data.py
+|   `-- metrics.py
+|-- tests/
+|   `-- test_metrics.py
+|-- requirements.txt
+|-- LICENSE
+`-- README.md
 ```
 
----
+## Setup and Usage
 
-## 4. Setup & Reproduction Guide
+### Installation
 
-### Environment Setup
 ```bash
-# Clone the repository
 git clone https://github.com/PrashamSheth/tree-canopy-instance-segmentation.git
 cd tree-canopy-instance-segmentation
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Download Competition Dataset
+### Run Tests
+
 ```bash
-python src/download_data.py
+python -m unittest discover tests
 ```
 
-### Convert COCO Annotations to YOLO Segmentation Format
-```python
-from src.dataset import coco_to_yolo_seg
-coco_to_yolo_seg("data/train_annotations.json", "data/dataset/labels/train")
-```
+### Training Command
 
-### Train YOLOv8-seg Model
 ```bash
 python scripts/train_yolo.py --data configs/yolov8_tree_seg.yaml --epochs 50 --imgsz 1024 --batch 4
 ```
 
----
+## License
 
-## 5. Competition Video & Presentation
-Detailed walkthrough of our methodology and instance segmentation visual outputs:
-- **Presentation Video:** [YouTube Video Link](https://www.youtube.com/watch?v=0vSGzhuIN-w)
+This project is licensed under the [MIT License](LICENSE).
